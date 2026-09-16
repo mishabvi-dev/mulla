@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mulla Wedding Stories — Capturing Timeless Love</title>
+    <meta name="description" content="Mulla Wedding Stories — Premium wedding photography & cinematic films.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js"></script>
+    <!-- Lenis Smooth Scroll -->
+    <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #ffffff;
+            --primary-soft: rgba(255, 255, 255, 0.7);
+            --bg-main: #2b0808; /* Deep cinematic red (not fully red) */
+            --bg-alt: #1a0404; /* Darker red */
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.6);
+            --border: rgba(255, 255, 255, 0.15);
+            
+            --ff-display: 'Playfair Display', Georgia, serif;
+            --ff-body: 'Inter', system-ui, sans-serif;
+            --ff-elegant: 'Cormorant Garamond', Garamond, serif;
+            --ff-script: 'Great Vibes', cursive;
+        }
+
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+        html { overflow-x: hidden; }
+        html.lenis, html.lenis body { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+        .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+        .lenis.lenis-stopped { overflow: hidden; }
+
+        body {
+            font-family: var(--ff-body);
+            background: var(--bg-main);
+            color: var(--text-main);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        img { display: block; max-width: 100%; }
+        button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+        /* ── Film Grain Overlay ── */
+        .grain {
+            position: fixed; inset: 0; z-index: 9998;
+            pointer-events: none;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 180px;
+        }
+
+        /* ── Cursor ── */
+        .cursor {
+            position: fixed; top: 0; left: 0;
+            width: 16px; height: 16px;
+            border: 1.5px solid var(--primary);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: multiply;
+            transition: width 0.4s cubic-bezier(.23,1,.32,1), height 0.4s cubic-bezier(.23,1,.32,1), border-color 0.3s;
+            transform: translate(-50%, -50%);
+        }
+        .cursor.active { width: 50px; height: 50px; border-color: var(--primary-soft); background: rgba(201,24,24,0.05); }
+
+        @media (max-width: 768px) { .cursor, .grain { display: none; } }
+
+        /* ── Preloader ── */
+        .preloader {
+            position: fixed; inset: 0; z-index: 10000;
+            background: var(--bg-main);
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; gap: 1.5rem;
+        }
+        .preloader-text {
+            font-family: var(--ff-script);
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: var(--primary);
+            opacity: 0;
+            transform: translateY(40px);
+        }
+        .preloader-bar-track {
+            width: 180px; height: 1px; background: rgba(0,0,0,0.08);
+            position: relative; overflow: hidden; border-radius: 1px;
+        }
+        .preloader-bar {
+            position: absolute; left: 0; top: 0;
+            height: 100%; width: 0; background: var(--primary);
+        }
+        .preloader-counter {
+            font-family: var(--ff-body); font-size: 0.7rem;
+            letter-spacing: 4px; color: var(--text-muted); opacity: 0;
+        }
+
+        /* ── Nav ── */
+        .nav {
+            position: fixed; top: 0; width: 100%; z-index: 100;
+            padding: 1.8rem 3.5%;
+            display: flex; align-items: center; justify-content: space-between;
+            transition: all 0.6s cubic-bezier(.23,1,.32,1);
+        }
+        .nav.scrolled {
+            padding: 1rem 3.5%;
+            background: rgba(43,8,8,0.92);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+        }
+        .nav-logo {
+            font-family: var(--ff-script);
+            font-size: 1.7rem; color: var(--primary);
+        }
+        .nav-links { display: flex; gap: 2.5rem; list-style: none; align-items: center; }
+        .nav-links a {
+            font-size: 0.68rem; font-weight: 600;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: var(--text-muted);
+            transition: color 0.3s;
+        }
+        .nav-links a:hover { color: var(--primary); }
+        .nav-links .btn-book {
+            padding: 10px 26px; border: 1px solid var(--primary);
+            color: var(--primary); font-size: 0.62rem; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase;
+            transition: all 0.4s;
+        }
+        .nav-links .btn-book:hover { background: var(--primary); color: #c91818; }
+
+        .menu-toggle { display: none; flex-direction: column; gap: 5px; z-index: 101; }
+        .menu-toggle span { display: block; width: 26px; height: 1.5px; background: var(--primary); transition: all 0.4s; }
+
+        .mobile-menu {
+            position: fixed; inset: 0; z-index: 99;
+            background: rgba(43,8,8,0.98);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5rem;
+            opacity: 0; pointer-events: none; transition: opacity 0.5s;
+        }
+        .mobile-menu.open { opacity: 1; pointer-events: all; }
+        .mobile-menu a {
+            font-family: var(--ff-display); font-size: 2rem;
+            color: var(--text-main); transition: color 0.3s;
+        }
+        .mobile-menu a:hover { color: var(--primary); }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .menu-toggle { display: flex; }
+        }
+
+        /* ── Hero ── */
+        .hero {
+            position: relative; height: 100vh; min-height: 600px;
+            display: flex; align-items: flex-end;
+            padding: 0 3.5% 6vh;
+            overflow: hidden;
+        }
+        .hero-media {
+            position: absolute; inset: 0; z-index: 0;
+        }
+        .hero-media img, .hero-media video {
+            width: 100%; height: 100%; object-fit: cover;
+            transform: scale(1.15);
+        }
+        .hero-overlay {
+            position: absolute; inset: 0;
+            background:
+                linear-gradient(180deg, rgba(43,8,8,0.4) 0%, rgba(43,8,8,0.2) 30%, rgba(43,8,8,0.8) 70%, var(--bg-main) 100%),
+                linear-gradient(90deg, rgba(43,8,8,0.6) 0%, transparent 60%);
+        }
+        .hero-content { position: relative; z-index: 2; max-width: 800px; }
+        .hero-tag {
+            font-size: 0.62rem; font-weight: 700;
+            letter-spacing: 6px; text-transform: uppercase;
+            color: var(--primary); margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        .hero-tag span { display: inline-block; transform: translateY(110%); }
+        .hero-title {
+            font-family: var(--ff-display);
+            font-size: clamp(3.2rem, 7.5vw, 6.5rem);
+            font-weight: 500; line-height: 1.05;
+            margin-bottom: 1.5rem; color: var(--text-main);
+        }
+        .hero-title .line { display: block; overflow: hidden; }
+        .hero-title .line-inner { display: inline-block; transform: translateY(110%); }
+        .hero-title em { font-family: var(--ff-script); font-style: normal; color: var(--primary); font-size: 0.8em; }
+        .hero-sub {
+            font-family: var(--ff-elegant);
+            font-size: clamp(1rem, 1.6vw, 1.3rem);
+            font-weight: 500; color: var(--text-muted);
+            line-height: 1.7; max-width: 520px;
+            opacity: 0; transform: translateY(30px);
+        }
+        .hero-cta-row {
+            display: flex; align-items: center; gap: 2.5rem;
+            margin-top: 2.5rem; opacity: 0; transform: translateY(30px);
+        }
+        .hero-btn {
+            padding: 15px 42px; background: var(--primary); color: #c91818;
+            font-size: 0.62rem; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase;
+            position: relative; overflow: hidden;
+            transition: transform 0.4s, background 0.4s;
+        }
+        .hero-btn:hover { transform: scale(1.04); background: var(--primary-soft); }
+        .hero-btn-outline {
+            padding: 15px 42px;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-size: 0.62rem; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase;
+            transition: all 0.4s;
+        }
+        .hero-btn-outline:hover { background: var(--primary); color: #c91818; }
+
+        .scroll-hint {
+            position: absolute; bottom: 2.5rem; right: 3.5%;
+            display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
+            z-index: 2; opacity: 0;
+        }
+        .scroll-hint span {
+            writing-mode: vertical-rl;
+            font-size: 0.55rem; font-weight: 600;
+            letter-spacing: 4px; text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .scroll-hint-line {
+            width: 1px; height: 50px;
+            background: linear-gradient(to bottom, var(--primary), transparent);
+            animation: scrollPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes scrollPulse {
+            0%,100% { transform: scaleY(0.4); opacity: 0.3; }
+            50% { transform: scaleY(1); opacity: 1; }
+        }
+
+        /* ── Marquee ── */
+        .marquee {
+            padding: 2.5rem 0; overflow: hidden;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-alt);
+        }
+        .marquee-inner { display: flex; gap: 1rem; width: max-content; }
+        .marquee-item {
+            font-family: var(--ff-display);
+            font-size: clamp(1.4rem, 3vw, 2.8rem);
+            font-weight: 500; color: rgba(201, 24, 24, 0.12);
+            white-space: nowrap;
+            display: flex; align-items: center; gap: 1rem;
+            flex-shrink: 0; padding: 0 1rem;
+        }
+        .marquee-item .sep {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--primary); opacity: 0.4; flex-shrink: 0;
+        }
+
+        /* ── About ── */
+        .about {
+            display: grid; grid-template-columns: 1fr 1fr;
+            min-height: 100vh; background: var(--bg-main);
+        }
+        .about-img {
+            position: relative; overflow: hidden;
+            clip-path: inset(0 100% 0 0);
+        }
+        .about-img img {
+            width: 100%; height: 100%; object-fit: cover;
+            transform: scale(1.15);
+        }
+        .about-img-tag {
+            position: absolute; bottom: 3rem; left: 3rem;
+            font-family: var(--ff-script); font-size: 3rem;
+            color: var(--bg-main); opacity: 0.9; text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .about-content {
+            display: flex; flex-direction: column; justify-content: center;
+            padding: clamp(3rem,6vw,7rem);
+        }
+        .label {
+            font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 5px; text-transform: uppercase;
+            color: var(--primary); margin-bottom: 1.5rem;
+        }
+        .heading {
+            font-family: var(--ff-display);
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            font-weight: 500; line-height: 1.15;
+            margin-bottom: 2rem; color: var(--text-main);
+        }
+        .heading em { font-style: italic; color: var(--primary); }
+        .body-text {
+            font-family: var(--ff-elegant);
+            font-size: clamp(1.1rem, 1.4vw, 1.25rem);
+            font-weight: 500; line-height: 1.9;
+            color: var(--text-muted);
+            max-width: 480px;
+        }
+        .stats {
+            display: flex; gap: 3rem; margin-top: 3.5rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+        }
+        .stat-num {
+            font-family: var(--ff-display);
+            font-size: 3rem; color: var(--primary); line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.6rem; font-weight: 600;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: var(--text-muted); margin-top: 0.6rem;
+        }
+
+        @media (max-width: 900px) {
+            .about { grid-template-columns: 1fr; }
+            .about-img { height: 55vh; clip-path: inset(0 0 0 0); }
+            .about-content { padding: 3rem 1.5rem; }
+        }
+
+        /* ── Cinematic Quote ── */
+        .quote-section {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg-alt);
+            position: relative; padding: 6rem 4%;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .quote-section::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 50% 50%, rgba(201,24,24,0.03) 0%, transparent 60%);
+        }
+        .quote-text {
+            font-family: var(--ff-display);
+            font-size: clamp(1.8rem, 4vw, 4rem);
+            font-weight: 500; text-align: center;
+            line-height: 1.4; max-width: 950px;
+            position: relative; color: var(--text-main);
+        }
+        .quote-text .char {
+            display: inline-block; opacity: 0.15;
+        }
+        .quote-text .gold-word { color: var(--primary); font-style: italic; }
+
+        /* ── Portfolio ── */
+        .portfolio {
+            padding: 10rem 3.5% 8rem;
+            background: var(--bg-main);
+        }
+        .portfolio-header {
+            display: flex; align-items: flex-end; justify-content: space-between;
+            margin-bottom: 5rem;
+        }
+        .portfolio-header .heading { margin-bottom: 0; }
+        .portfolio-count {
+            font-family: var(--ff-elegant); font-size: 1.1rem; font-weight: 600;
+            color: var(--text-muted); letter-spacing: 1px;
+        }
+
+        .portfolio-mosaic {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-auto-rows: 1fr;
+            gap: 1.5rem;
+        }
+        .p-item {
+            position: relative; overflow: hidden;
+            cursor: pointer; border-radius: 8px;
+        }
+        .p-item img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 1.8s cubic-bezier(.23,1,.32,1);
+        }
+        .p-item:hover img { transform: scale(1.06); }
+        .p-item-info {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 4rem 1.5rem 1.5rem;
+            background: linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0.7) 40%, transparent);
+            transform: translateY(100%);
+            transition: transform 0.7s cubic-bezier(.23,1,.32,1);
+        }
+        .p-item:hover .p-item-info { transform: translateY(0); }
+        .p-item-info h3 {
+            font-family: var(--ff-display); font-size: 1.3rem;
+            font-weight: 600; margin-bottom: 0.3rem; color: var(--text-main);
+        }
+        .p-item-info span {
+            font-size: 0.6rem; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: var(--primary);
+        }
+
+        .p-item:nth-child(1) { grid-column: 1/6; grid-row: 1/3; }
+        .p-item:nth-child(2) { grid-column: 6/9; grid-row: 1/2; }
+        .p-item:nth-child(3) { grid-column: 9/13; grid-row: 1/2; }
+        .p-item:nth-child(4) { grid-column: 6/10; grid-row: 2/3; }
+        .p-item:nth-child(5) { grid-column: 10/13; grid-row: 2/4; }
+        .p-item:nth-child(6) { grid-column: 1/5; grid-row: 3/4; }
+        .p-item:nth-child(7) { grid-column: 5/10; grid-row: 3/4; }
+
+        @media (max-width: 768px) {
+            .portfolio-mosaic { grid-template-columns: 1fr 1fr; grid-auto-rows: 250px; gap: 1rem; }
+            .p-item:nth-child(n) { grid-column: auto; grid-row: auto; }
+            .p-item:nth-child(1) { grid-column: 1 / -1; grid-row: auto; }
+            .portfolio-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+        }
+
+        /* ── Full-width Parallax Divider ── */
+        .parallax-divider {
+            height: 55vh; position: relative; overflow: hidden;
+        }
+        .parallax-divider img {
+            position: absolute; inset: -15%; width: 130%; height: 130%;
+            object-fit: cover;
+        }
+        .parallax-divider-overlay {
+            position: absolute; inset: 0;
+            background: rgba(43,8,8,0.7); /* Matching the dark red background */
+            display: flex; align-items: center; justify-content: center;
+        }
+        .parallax-divider-text {
+            font-family: var(--ff-script);
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            color: #ffffff; text-align: center;
+            opacity: 0.95; text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* ── Horizontal Scroll ── */
+        .hscroll { height: 100vh; overflow: hidden; position: relative; background: var(--bg-alt); }
+        .hscroll-track {
+            display: flex; gap: 2rem;
+            height: 100%; align-items: center;
+            padding: 0 4rem;
+            will-change: transform;
+        }
+        .hscroll-card {
+            flex-shrink: 0;
+            width: 32vw; height: 72vh;
+            position: relative; overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+        }
+        .hscroll-card img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 1.2s cubic-bezier(.23,1,.32,1);
+        }
+        .hscroll-card:hover img { transform: scale(1.05); }
+        .hscroll-card-caption {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 4rem 1.8rem 1.8rem;
+            background: linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0.6) 50%, transparent);
+        }
+        .hscroll-card-caption h3 {
+            font-family: var(--ff-display); font-size: 1.4rem; font-weight: 600; color: var(--text-main);
+        }
+        .hscroll-card-caption p {
+            font-size: 0.6rem; font-weight: 700; letter-spacing: 3px;
+            text-transform: uppercase; color: var(--primary); margin-top: 0.4rem;
+        }
+        .hscroll-label {
+            position: absolute; top: 50%; right: 3rem;
+            transform: translateY(-50%) rotate(-90deg);
+            font-size: 0.6rem; font-weight: 700;
+            letter-spacing: 5px; text-transform: uppercase;
+            color: var(--text-muted); transform-origin: center center;
+            z-index: 2;
+        }
+
+        @media (max-width: 768px) {
+            .hscroll-card { width: 75vw; height: 60vh; }
+        }
+
+        /* ── Services ── */
+        .services {
+            padding: 10rem 3.5% 8rem;
+            background: var(--bg-main);
+        }
+        .services-header { text-align: center; margin-bottom: 5rem; }
+        .services-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 1px; max-width: 1100px; margin: 0 auto;
+            background: var(--border);
+            border: 1px solid var(--border);
+        }
+        .svc {
+            padding: 3.5rem 2.5rem;
+            background: var(--bg-main);
+            position: relative;
+            transition: background 0.5s;
+        }
+        .svc:hover { background: var(--bg-alt); }
+        .svc-num {
+            font-family: var(--ff-display); font-size: 3.5rem;
+            color: rgba(255,255,255,0.08); line-height: 1;
+            margin-bottom: 1.5rem; font-weight: 600;
+        }
+        .svc h3 {
+            font-family: var(--ff-display); font-size: 1.4rem;
+            font-weight: 600; margin-bottom: 1rem; color: var(--text-main);
+        }
+        .svc p {
+            font-family: var(--ff-elegant); font-size: 1.1rem; font-weight: 500;
+            color: var(--text-muted); line-height: 1.7;
+        }
+        @media (max-width: 900px) { .services-grid { grid-template-columns: 1fr; } }
+
+        /* ── Reels ── */
+        .reels {
+            padding: 10rem 3.5% 8rem;
+            background: var(--bg-alt);
+            border-top: 1px solid var(--border);
+        }
+        .reels-header { text-align: center; margin-bottom: 5rem; }
+        .reels-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2.5rem; max-width: 1300px; margin: 0 auto;
+            align-items: start;
+        }
+        .reel-wrap {
+            background: var(--bg-main);
+            border-radius: 12px; overflow: hidden;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            transition: all 0.5s cubic-bezier(.23,1,.32,1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        }
+        .reel-wrap:hover {
+            border-color: rgba(255,255,255,0.3);
+            transform: translateY(-6px);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+        }
+        .reel-wrap .reel-vid {
+            margin: 0 auto;
+            width: 100%;
+            height: 520px;
+            object-fit: cover;
+            border-radius: 8px;
+            display: block;
+        }
+        .mute-toggle {
+            position: absolute; bottom: 15px; right: 15px;
+            width: 38px; height: 38px;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 50%;
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 10; transition: all 0.3s;
+        }
+        .mute-toggle:hover { background: var(--primary); color: #c91818; transform: scale(1.1); }
+        .mute-toggle svg { width: 18px; height: 18px; fill: currentColor; }
+        .reel-footer {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1.2rem 0.5rem 0.2rem;
+        }
+        .reel-footer h4 {
+            font-family: var(--ff-elegant); font-size: 1.2rem; font-weight: 600; color: var(--text-main);
+        }
+        .reel-footer a {
+            font-size: 0.6rem; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--primary); display: flex; align-items: center; gap: 0.5rem;
+            transition: gap 0.3s;
+        }
+        .reel-footer a:hover { gap: 0.8rem; }
+        .reel-footer a svg { width: 14px; height: 14px; stroke: var(--primary); fill: none; stroke-width: 2; }
+
+        .ig-follow {
+            text-align: center; margin-top: 4rem;
+        }
+        .ig-follow a {
+            display: inline-flex; align-items: center; gap: 0.8rem;
+            padding: 15px 38px; border: 1px solid var(--primary);
+            font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: var(--primary); transition: all 0.4s;
+            border-radius: 4px;
+        }
+        .ig-follow a:hover { background: var(--primary); color: #c91818; }
+        .ig-follow a svg { width: 18px; height: 18px; fill: currentColor; }
+
+        @media (max-width: 900px) {
+            .reels-row { grid-template-columns: 1fr; max-width: 460px; }
+        }
+
+        /* ── Testimonials ── */
+        .testimonials {
+            padding: 10rem 3.5% 8rem;
+            background: var(--bg-main);
+            position: relative;
+        }
+        .testimonials::before {
+            content: '\201C'; position: absolute;
+            top: 5rem; left: 50%; transform: translateX(-50%);
+            font-family: var(--ff-display); font-size: 22rem;
+            color: rgba(255,255,255,0.04); line-height: 1;
+        }
+        .testimonials-header { text-align: center; margin-bottom: 5rem; }
+        .testimonials-slider {
+            max-width: 750px; margin: 0 auto; text-align: center;
+            position: relative;
+        }
+        .t-card { display: none; }
+        .t-card.active { display: block; animation: fadeUp 0.6s forwards; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .t-card blockquote {
+            font-family: var(--ff-elegant);
+            font-size: clamp(1.2rem, 2vw, 1.6rem);
+            font-weight: 500; font-style: italic;
+            line-height: 1.9; color: var(--text-main);
+            margin-bottom: 2.5rem;
+        }
+        .t-card .t-author {
+            font-size: 0.65rem; font-weight: 800;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: var(--primary);
+        }
+        .t-card .t-loc {
+            font-family: var(--ff-elegant); font-size: 1.1rem; font-weight: 500;
+            color: var(--text-muted); margin-top: 0.4rem;
+        }
+        .t-dots {
+            display: flex; gap: 0.8rem; justify-content: center; margin-top: 3.5rem;
+        }
+        .t-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: rgba(201,24,24,0.15);
+            cursor: pointer; transition: all 0.4s;
+        }
+        .t-dot.active { background: var(--primary); transform: scale(1.4); }
+
+        /* ── Contact ── */
+        .contact {
+            display: grid; grid-template-columns: 1fr 1fr;
+            min-height: 100vh; background: var(--bg-alt);
+            border-top: 1px solid var(--border);
+        }
+        .contact-img { position: relative; overflow: hidden; }
+        .contact-img img { width: 100%; height: 100%; object-fit: cover; }
+        .contact-img-fade {
+            position: absolute; inset: 0;
+            background: linear-gradient(270deg, var(--bg-alt) 0%, transparent 40%);
+        }
+        .contact-body {
+            display: flex; flex-direction: column; justify-content: center;
+            padding: clamp(3rem, 5vw, 6rem);
+        }
+        .contact-form { margin-top: 2.5rem; }
+        .field { margin-bottom: 2rem; }
+        .field input, .field textarea {
+            width: 100%; padding: 1rem 0;
+            background: transparent; border: none;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main); font-family: var(--ff-elegant); font-size: 1.15rem; font-weight: 500;
+            outline: none; transition: border-color 0.3s;
+        }
+        .field input::placeholder, .field textarea::placeholder { color: var(--text-muted); }
+        .field input:focus, .field textarea:focus { border-bottom-color: var(--primary); }
+        .field textarea { resize: none; height: 90px; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .submit-btn {
+            padding: 16px 50px; background: var(--primary);
+            color: #c91818; font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase;
+            margin-top: 1rem; transition: transform 0.3s, background 0.3s;
+            border-radius: 4px;
+        }
+        .submit-btn:hover { transform: scale(1.03); background: var(--primary-soft); }
+        .contact-meta {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 2rem; margin-top: 4rem; padding-top: 3rem;
+            border-top: 1px solid var(--border);
+        }
+        .contact-meta h4 {
+            font-size: 0.6rem; font-weight: 800;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: var(--primary); margin-bottom: 0.5rem;
+        }
+        .contact-meta p {
+            font-family: var(--ff-elegant); font-size: 1.1rem; font-weight: 500;
+            color: var(--text-muted); line-height: 1.6;
+        }
+        .contact-meta a { color: var(--primary); font-weight: 600; }
+
+        @media (max-width: 900px) {
+            .contact { grid-template-columns: 1fr; }
+            .contact-img { height: 40vh; }
+            .contact-body { padding: 3rem 1.5rem; }
+            .field-row { grid-template-columns: 1fr; }
+        }
+
+        /* ── Footer ── */
+        .footer {
+            padding: 4rem 3.5%; border-top: 1px solid var(--border);
+            background: var(--bg-main);
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 1.5rem;
+        }
+        .footer-brand { font-family: var(--ff-script); font-size: 1.8rem; color: var(--primary); }
+        .footer-copy { font-size: 0.7rem; font-weight: 500; color: var(--text-muted); letter-spacing: 1px; }
+        .footer-social { display: flex; gap: 1rem; }
+        .footer-social a {
+            width: 40px; height: 40px; border-radius: 50%;
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.4s;
+        }
+        .footer-social a:hover { background: var(--primary); border-color: var(--primary); }
+        .footer-social a svg { width: 16px; height: 16px; fill: var(--primary); transition: fill 0.3s; }
+        .footer-social a:hover svg { fill: #fff; }
+
+        @media (max-width: 768px) {
+            .footer { flex-direction: column; text-align: center; gap: 2rem; }
+        }
+
+        /* ── Reveal utility ── */
+        .r { opacity: 0; transform: translateY(50px); }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+    <div class="cursor" id="cursor"></div>
+
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-text">Mulla Wedding Stories</div>
+        <div class="preloader-bar-track"><div class="preloader-bar"></div></div>
+        <div class="preloader-counter">0%</div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="nav" id="nav">
+        <a href="#" class="nav-logo">Mulla</a>
+        <ul class="nav-links">
+            <li><a href="#about">About</a></li>
+            <li><a href="#portfolio">Portfolio</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#reels">Reels</a></li>
+            <li><a href="#testimonials">Stories</a></li>
+            <li><a href="#contact" class="btn-book">Book Now</a></li>
+        </ul>
+        <button class="menu-toggle" id="menuToggle" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#about">About</a>
+        <a href="#portfolio">Portfolio</a>
+        <a href="#services">Services</a>
+        <a href="#reels">Reels</a>
+        <a href="#testimonials">Stories</a>
+        <a href="#contact">Book Now</a>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero" id="hero">
+        <div class="hero-media">
+            <img src="hero-bg.png" alt="Mulla Wedding Stories - Bride Portrait">
+            <div class="hero-overlay"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-tag"><span>Premium Wedding Photography & Films</span></div>
+            <h1 class="hero-title">
+                <span class="line"><span class="line-inner"><em>Where</em> Every</span></span>
+                <span class="line"><span class="line-inner">Moment Becomes</span></span>
+                <span class="line"><span class="line-inner"><em>Eternal</em></span></span>
+            </h1>
+            <p class="hero-sub">We don't just capture weddings. We craft heirloom stories — woven from light, emotion, and the quiet poetry of your love.</p>
+            <div class="hero-cta-row">
+                <a href="#portfolio" class="hero-btn">View Our Work</a>
+                <a href="#contact" class="hero-btn-outline">Get In Touch</a>
+            </div>
+        </div>
+        <div class="scroll-hint">
+            <span>Scroll</span>
+            <div class="scroll-hint-line"></div>
+        </div>
+    </section>
+
+    <!-- Marquee -->
+    <div class="marquee">
+        <div class="marquee-inner" id="marquee">
+            <span class="marquee-item">Wedding Photography <span class="sep"></span></span>
+            <span class="marquee-item">Cinematic Films <span class="sep"></span></span>
+            <span class="marquee-item">Pre-Wedding <span class="sep"></span></span>
+            <span class="marquee-item">Candid Moments <span class="sep"></span></span>
+            <span class="marquee-item">Destination Weddings <span class="sep"></span></span>
+            <span class="marquee-item">Drone Shots <span class="sep"></span></span>
+            <span class="marquee-item">Wedding Photography <span class="sep"></span></span>
+            <span class="marquee-item">Cinematic Films <span class="sep"></span></span>
+            <span class="marquee-item">Pre-Wedding <span class="sep"></span></span>
+            <span class="marquee-item">Candid Moments <span class="sep"></span></span>
+            <span class="marquee-item">Destination Weddings <span class="sep"></span></span>
+            <span class="marquee-item">Drone Shots <span class="sep"></span></span>
+        </div>
+    </div>
+
+    <!-- About -->
+    <section class="about" id="about">
+        <div class="about-img">
+            <img src="about-img.jpg" alt="Wedding Couple under confetti">
+            <span class="about-img-tag">Love Stories</span>
+        </div>
+        <div class="about-content">
+            <div class="label r">Our Story</div>
+            <h2 class="heading r">Crafting <em>Timeless</em><br>Wedding Narratives</h2>
+            <p class="body-text r">At Mulla Wedding Stories, every love story deserves to be told with artistry and emotion. We blend candid photography with cinematic storytelling — capturing the quiet whisper of vows to the grandest celebrations.</p>
+            <p class="body-text r" style="margin-top:1rem;">From stolen glances to joyful tears, we preserve every nuance of your day into images you'll treasure for generations.</p>
+            <div class="stats">
+                <div class="r">
+                    <div class="stat-num" data-count="433">0</div>
+                    <div class="stat-label">Stories Told</div>
+                </div>
+                <div class="r">
+                    <div class="stat-num" data-count="9070">0</div>
+                    <div class="stat-label">Community</div>
+                </div>
+                <div class="r">
+                    <div class="stat-num" data-count="8">0</div>
+                    <div class="stat-label">Years</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quote -->
+    <section class="quote-section">
+        <p class="quote-text" id="quoteText">
+            We don't just photograph <span class="gold-word">weddings</span> — we capture the <span class="gold-word">heartbeat</span> of your love <span class="gold-word">story</span>
+        </p>
+    </section>
+
+    <!-- Portfolio -->
+    <section class="portfolio" id="portfolio">
+        <div class="portfolio-header">
+            <div>
+                <div class="label r">Portfolio</div>
+                <h2 class="heading r">Moments We've <em>Treasured</em></h2>
+            </div>
+            <div class="portfolio-count r">433+ weddings captured</div>
+        </div>
+        <div class="portfolio-mosaic">
+            <div class="p-item r">
+                <img src="assets/images/port1.jpg" alt="">
+                <div class="p-item-info"><h3>The Golden Hour</h3><span>Ceremony</span></div>
+            </div>
+            <div class="p-item r">
+                <img src="assets/images/port2.jpg" alt="">
+                <div class="p-item-info"><h3>Eternal Bond</h3><span>Portraits</span></div>
+            </div>
+            <div class="p-item r">
+                <img src="assets/images/port3.jpg" alt="">
+                <div class="p-item-info"><h3>Before Forever</h3><span>Pre-Wedding</span></div>
+            </div>
+            <div class="p-item r">
+                <img src="assets/images/port4.jpg" alt="">
+                <div class="p-item-info"><h3>Night of Stars</h3><span>Reception</span></div>
+            </div>
+            <div class="p-item r">
+                <img src="assets/images/port5.jpg" alt="">
+                <div class="p-item-info"><h3>Unscripted Joy</h3><span>Candid</span></div>
+            </div>
+            <div class="p-item r">
+                <img src="assets/images/port6.jpg" alt="">
+                <div class="p-item-info"><h3>Radiant Grace</h3><span>Bridal</span></div>
+            </div>
+            <div class="p-item r">
+                <img src="assets/images/port7.jpg" alt="">
+                <div class="p-item-info"><h3>Sacred Details</h3><span>Details</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Parallax Divider -->
+    <section class="parallax-divider">
+        <img src="assets/images/parallax.jpg" alt="" id="parImg">
+        <div class="parallax-divider-overlay">
+            <div class="parallax-divider-text">Every Love Story is Beautiful</div>
+        </div>
+    </section>
+
+    <!-- Horizontal Scroll -->
+    <section class="hscroll" id="hscroll">
+        <div class="hscroll-track" id="hscrollTrack">
+            <div class="hscroll-card">
+                <img src="assets/images/scroll1.jpg" alt="">
+                <div class="hscroll-card-caption"><h3>Whispered Promises</h3><p>Traditional Ceremony</p></div>
+            </div>
+            <div class="hscroll-card">
+                <img src="assets/images/scroll2.jpg" alt="">
+                <div class="hscroll-card-caption"><h3>Dance of Joy</h3><p>Reception Night</p></div>
+            </div>
+            <div class="hscroll-card">
+                <img src="assets/images/scroll3.jpg" alt="">
+                <div class="hscroll-card-caption"><h3>Into the Sunset</h3><p>Couple Portrait</p></div>
+            </div>
+            <div class="hscroll-card">
+                <img src="assets/images/scroll4.jpg" alt="">
+                <div class="hscroll-card-caption"><h3>Golden Embrace</h3><p>Pre-Wedding</p></div>
+            </div>
+            <div class="hscroll-card">
+                <img src="assets/images/scroll5.jpg" alt="">
+                <div class="hscroll-card-caption"><h3>Veiled Beauty</h3><p>Bridal Collection</p></div>
+            </div>
+        </div>
+        <div class="hscroll-label">Drag to explore</div>
+    </section>
+
+    <!-- Services -->
+    <section class="services" id="services">
+        <div class="services-header">
+            <div class="label r">What We Offer</div>
+            <h2 class="heading r">Our <em>Signature</em> Services</h2>
+        </div>
+        <div class="services-grid">
+            <div class="svc r"><div class="svc-num">01</div><h3>Wedding Photography</h3><p>Full-day coverage — candid & posed, blended seamlessly into a cohesive visual narrative of your day.</p></div>
+            <div class="svc r"><div class="svc-num">02</div><h3>Cinematic Films</h3><p>Beautifully crafted wedding films with cinematic color grading, drone footage, and emotive storytelling.</p></div>
+            <div class="svc r"><div class="svc-num">03</div><h3>Pre-Wedding Shoots</h3><p>Romantic sessions at stunning locations that capture the anticipation and excitement of your journey together.</p></div>
+            <div class="svc r"><div class="svc-num">04</div><h3>Destination Weddings</h3><p>From beachside ceremonies to palace celebrations — we travel wherever your love takes you.</p></div>
+            <div class="svc r"><div class="svc-num">05</div><h3>Drone Coverage</h3><p>Breathtaking aerial perspectives that add cinematic grandeur to your wedding story.</p></div>
+            <div class="svc r"><div class="svc-num">06</div><h3>Album Design</h3><p>Handcrafted luxury albums designed to be cherished for generations. Premium materials, museum-quality prints.</p></div>
+        </div>
+    </section>
+
+    <!-- Reels -->
+    <section class="reels" id="reels">
+        <div class="reels-header">
+            <div class="label r">Our Work Reels</div>
+            <h2 class="heading r">Watch Our <em>Stories</em> Come Alive</h2>
+            <p class="body-text r" style="margin:1rem auto 0;text-align:center;max-width:550px;">Experience the magic through our curated collection of wedding reels — cinematic journeys through love, tradition, and celebration.</p>
+        </div>
+        <div class="reels-row">
+            <div class="reel-wrap r">
+                <div class="vid-wrap" style="position:relative;">
+                    <video autoplay loop muted playsinline class="reel-vid">
+                        <source src="assets/reels/reel1.mp4" type="video/mp4">
+                    </video>
+                    <button class="mute-toggle" aria-label="Toggle Mute">
+                        <svg viewBox="0 0 24 24" class="vol-muted"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                        <svg viewBox="0 0 24 24" class="vol-up" style="display:none;"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </button>
+                </div>
+                <div class="reel-footer"><h4>Wedding Highlights</h4><a href="https://www.instagram.com/reel/Dc_mOevTbrw/" target="_blank">View IG <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a></div>
+            </div>
+            <div class="reel-wrap r">
+                <div class="vid-wrap" style="position:relative;">
+                    <video autoplay loop muted playsinline class="reel-vid">
+                        <source src="assets/reels/reel2.mp4" type="video/mp4">
+                    </video>
+                    <button class="mute-toggle" aria-label="Toggle Mute">
+                        <svg viewBox="0 0 24 24" class="vol-muted"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                        <svg viewBox="0 0 24 24" class="vol-up" style="display:none;"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </button>
+                </div>
+                <div class="reel-footer"><h4>Cinematic Story</h4><a href="https://www.instagram.com/reel/Dc3byzsTgW_/" target="_blank">View IG <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a></div>
+            </div>
+            <div class="reel-wrap r">
+                <div class="vid-wrap" style="position:relative;">
+                    <video autoplay loop muted playsinline class="reel-vid">
+                        <source src="assets/reels/reel3.mp4" type="video/mp4">
+                    </video>
+                    <button class="mute-toggle" aria-label="Toggle Mute">
+                        <svg viewBox="0 0 24 24" class="vol-muted"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                        <svg viewBox="0 0 24 24" class="vol-up" style="display:none;"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </button>
+                </div>
+                <div class="reel-footer"><h4>Love in Motion</h4><a href="https://www.instagram.com/reel/DcYwpXON9RD/" target="_blank">View IG <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a></div>
+            </div>
+            <div class="reel-wrap r">
+                <div class="vid-wrap" style="position:relative;">
+                    <video autoplay loop muted playsinline class="reel-vid">
+                        <source src="assets/reels/reel4.mp4" type="video/mp4">
+                    </video>
+                    <button class="mute-toggle" aria-label="Toggle Mute">
+                        <svg viewBox="0 0 24 24" class="vol-muted"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                        <svg viewBox="0 0 24 24" class="vol-up" style="display:none;"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </button>
+                </div>
+                <div class="reel-footer"><h4>Featured Reel 1</h4><a href="https://www.instagram.com/reel/DJ6WM67Spnz/" target="_blank">View IG <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a></div>
+            </div>
+            <div class="reel-wrap r">
+                <div class="vid-wrap" style="position:relative;">
+                    <video autoplay loop muted playsinline class="reel-vid">
+                        <source src="assets/reels/reel5.mp4" type="video/mp4">
+                    </video>
+                    <button class="mute-toggle" aria-label="Toggle Mute">
+                        <svg viewBox="0 0 24 24" class="vol-muted"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                        <svg viewBox="0 0 24 24" class="vol-up" style="display:none;"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </button>
+                </div>
+                <div class="reel-footer"><h4>Featured Reel 2</h4><a href="https://www.instagram.com/reel/DIftlR-yPDl/" target="_blank">View IG <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a></div>
+            </div>
+            <div class="reel-wrap r">
+                <div class="vid-wrap" style="position:relative;">
+                    <video autoplay loop muted playsinline class="reel-vid">
+                        <source src="assets/reels/reel6.mp4" type="video/mp4">
+                    </video>
+                    <button class="mute-toggle" aria-label="Toggle Mute">
+                        <svg viewBox="0 0 24 24" class="vol-muted"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                        <svg viewBox="0 0 24 24" class="vol-up" style="display:none;"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </button>
+                </div>
+                <div class="reel-footer"><h4>Featured Reel 3</h4><a href="https://www.instagram.com/reel/DLP9YBjT-Kk/" target="_blank">View IG <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a></div>
+            </div>
+            <div class="reel-wrap r">
+                <div class="vid-wrap" style="position:relative;">
+                    <video autoplay loop muted playsinline class="reel-vid">
+                        <source src="assets/reels/reel7.mp4" type="video/mp4">
+                    </video>
+                    <button class="mute-toggle" aria-label="Toggle Mute">
+                        <svg viewBox="0 0 24 24" class="vol-muted"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                        <svg viewBox="0 0 24 24" class="vol-up" style="display:none;"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </button>
+                </div>
+                <div class="reel-footer"><h4>Featured Reel 4</h4><a href="https://www.instagram.com/reel/C9W5pRXy78p/" target="_blank">View IG <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a></div>
+            </div>
+        </div>
+        <div class="ig-follow r">
+            <a href="https://www.instagram.com/mulla_weddingstories/" target="_blank">
+                <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                Follow @mulla_weddingstories
+            </a>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials" id="testimonials">
+        <div class="testimonials-header">
+            <div class="label r">Love Letters</div>
+            <h2 class="heading r">What Our <em>Couples</em> Say</h2>
+        </div>
+        <div class="testimonials-slider">
+            <div class="t-card active">
+                <blockquote>"Mulla Wedding Stories captured our day with such artistry and emotion. Every photo feels like a painting — they didn't miss a single moment."</blockquote>
+                <div class="t-author">Priya & Arjun</div>
+                <div class="t-loc">Destination Wedding, Udaipur</div>
+            </div>
+            <div class="t-card">
+                <blockquote>"The cinematic film they created was beyond anything we imagined. Our families watch it on every anniversary. They truly understand the essence of Indian weddings."</blockquote>
+                <div class="t-author">Sneha & Rohit</div>
+                <div class="t-loc">Traditional Wedding, Pune</div>
+            </div>
+            <div class="t-card">
+                <blockquote>"From our pre-wedding shoot in the mountains to the reception night, every frame was perfect. They felt like family, not just photographers."</blockquote>
+                <div class="t-author">Aisha & Imran</div>
+                <div class="t-loc">Royal Wedding, Jaipur</div>
+            </div>
+            <div class="t-dots">
+                <div class="t-dot active" data-i="0"></div>
+                <div class="t-dot" data-i="1"></div>
+                <div class="t-dot" data-i="2"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="contact" id="contact">
+        <div class="contact-img">
+            <img src="assets/images/contact.jpg" alt="">
+            <div class="contact-img-fade"></div>
+        </div>
+        <div class="contact-body">
+            <div class="label r">Let's Create Magic</div>
+            <h2 class="heading r">Your Love Story<br>Starts <em>Here</em></h2>
+            <p class="body-text r">Ready to have your wedding story told with artistry? Let's talk about your special day.</p>
+            <form class="contact-form" onsubmit="submitToWhatsApp(event)">
+                <div class="field-row">
+                    <div class="field r"><input type="text" id="contactName" placeholder="Your Name" required></div>
+                    <div class="field r"><input type="email" id="contactEmail" placeholder="Email Address" required></div>
+                </div>
+                <div class="field-row">
+                    <div class="field r"><input type="text" id="contactDate" placeholder="Wedding Date"></div>
+                    <div class="field r"><input type="text" id="contactLocation" placeholder="Wedding Location"></div>
+                </div>
+                <div class="field r"><textarea id="contactMessage" placeholder="Tell us about your dream wedding..."></textarea></div>
+                <button type="submit" class="submit-btn r">Send Your Story</button>
+            </form>
+            <div class="contact-meta">
+                <div class="r"><h4>Follow Us</h4><p><a href="https://www.instagram.com/mulla_weddingstories/" target="_blank">@mulla_weddingstories</a></p></div>
+                <div class="r"><h4>Reach Out</h4><p>DM us on Instagram<br>for quick inquiries</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-brand">Mulla Wedding Stories</div>
+        <div class="footer-copy">&copy; 2024 Mulla Wedding Stories. All rights reserved.</div>
+        <div class="footer-social">
+            <a href="https://www.instagram.com/mulla_weddingstories/" target="_blank" aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
+            <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a>
+            <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+        </div>
+    </footer>
+
+    <script>
+    if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; }
+    window.scrollTo(0, 0);
+
+    gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+    // ── Lenis Smooth Scroll ──
+    const lenis = new Lenis({ duration: 1.2, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)), touchMultiplier: 2 });
+    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+    requestAnimationFrame(raf);
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add((time) => lenis.raf(time * 1000));
+    gsap.ticker.lagSmoothing(0);
+
+    // ── Cursor ──
+    const cursor = document.getElementById('cursor');
+    let cx = 0, cy = 0, tx = 0, ty = 0;
+    document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
+    (function moveCursor() {
+        cx += (tx - cx) * 0.15; cy += (ty - cy) * 0.15;
+        cursor.style.left = cx + 'px'; cursor.style.top = cy + 'px';
+        requestAnimationFrame(moveCursor);
+    })();
+    document.querySelectorAll('a,button,.p-item,.svc,.hscroll-card,.reel-wrap').forEach(el => {
+        el.addEventListener('mouseenter', () => cursor.classList.add('active'));
+        el.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+    });
+
+    // ── Preloader ──
+    const pTl = gsap.timeline({ onComplete() {
+        gsap.to('#preloader', { yPercent: -100, duration: 0.9, ease: 'power4.inOut', onComplete() {
+            document.getElementById('preloader').style.display = 'none';
+            runHero();
+        }});
+    }});
+    pTl.to('.preloader-text', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' })
+       .to('.preloader-counter', { opacity: 1, duration: 0.4 }, '-=0.4')
+       .to('.preloader-bar', { width: '100%', duration: 1.6, ease: 'power2.inOut',
+            onUpdate() { document.querySelector('.preloader-counter').textContent = Math.round(this.progress() * 100) + '%'; }
+       }, '-=0.2')
+       .to({}, { duration: 0.3 });
+
+    // ── Hero ──
+    function runHero() {
+        const tl = gsap.timeline();
+        tl.to('.hero-media img', { scale: 1, duration: 2.2, ease: 'power2.out' })
+          .to('.hero-tag span', { y: 0, duration: 1, ease: 'power4.out' }, '-=1.6')
+          .to('.hero-title .line-inner', { y: 0, duration: 1.3, stagger: 0.12, ease: 'power4.out' }, '-=0.9')
+          .to('.hero-sub', { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out' }, '-=0.5')
+          .to('.hero-cta-row', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, '-=0.4')
+          .to('.scroll-hint', { opacity: 1, duration: 0.6 }, '-=0.3');
+
+        gsap.to('.hero-media img', { yPercent: 15, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+    }
+
+    // ── Marquee ──
+    gsap.to('#marquee', { xPercent: -50, ease: 'none', duration: 35, repeat: -1 });
+
+    // ── Generic reveals ──
+    gsap.utils.toArray('.r').forEach(el => {
+        gsap.to(el, { opacity: 1, y: 0, duration: 1, ease: 'power3.out',
+            scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
+        });
+    });
+
+    // ── About clip-path reveal ──
+    gsap.to('.about-img', { clipPath: 'inset(0 0% 0 0)', ease: 'power3.inOut', duration: 1.4,
+        scrollTrigger: { trigger: '.about', start: 'top 70%', toggleActions: 'play none none none' }
+    });
+    gsap.to('.about-img img', { scale: 1, ease: 'none', scrollTrigger: { trigger: '.about', start: 'top bottom', end: 'bottom top', scrub: 1 } });
+
+    // ── Counters ──
+    document.querySelectorAll('.stat-num').forEach(el => {
+        const target = +el.dataset.count;
+        ScrollTrigger.create({ trigger: el, start: 'top 88%', once: true, onEnter() {
+            gsap.to({ v: 0 }, { v: target, duration: 2, ease: 'power2.out',
+                onUpdate() { el.textContent = Math.floor(this.targets()[0].v).toLocaleString() + '+'; }
+            });
+        }});
+    });
+
+    // ── Quote per-character reveal ──
+    const quoteEl = document.getElementById('quoteText');
+    const quoteHTML = quoteEl.innerHTML;
+    // Split into characters, preserving spans
+    let charIndex = 0;
+    const newHTML = quoteHTML.replace(/(<span[^>]*>)(.*?)(<\/span>)|([^<])/g, (match, openTag, inner, closeTag, singleChar) => {
+        if (openTag) {
+            const chars = inner.split('').map(c => c === ' ' ? ' ' : `<span class="char">${c}</span>`).join('');
+            return openTag + chars + closeTag;
+        }
+        if (singleChar === ' ') return ' ';
+        return `<span class="char">${singleChar}</span>`;
+    });
+    quoteEl.innerHTML = newHTML;
+
+    gsap.utils.toArray('.quote-text .char').forEach((ch, i, arr) => {
+        gsap.to(ch, { opacity: 1, ease: 'none',
+            scrollTrigger: { trigger: '.quote-section', start: `top+=${(i / arr.length) * 80}% center`, end: `top+=${((i + 1) / arr.length) * 80}% center`, scrub: true }
+        });
+    });
+
+    // ── Parallax divider ──
+    gsap.to('#parImg', { yPercent: 15, ease: 'none', scrollTrigger: { trigger: '.parallax-divider', start: 'top bottom', end: 'bottom top', scrub: true } });
+
+    // ── Horizontal Scroll ──
+    const track = document.getElementById('hscrollTrack');
+    const sw = track.scrollWidth - window.innerWidth;
+    gsap.to(track, { x: -sw, ease: 'none', scrollTrigger: { trigger: '.hscroll', start: 'top top', end: () => `+=${sw}`, scrub: 1, pin: true, anticipatePin: 1, invalidateOnRefresh: true } });
+
+    // ── Nav scroll style ──
+    ScrollTrigger.create({ start: 80, onUpdate(self) {
+        document.getElementById('nav').classList.toggle('scrolled', self.scroll() > 80);
+    }});
+
+    // ── Testimonials ──
+    const tCards = document.querySelectorAll('.t-card');
+    const tDots = document.querySelectorAll('.t-dot');
+    let cur = 0;
+    function showT(i) { tCards.forEach(c => c.classList.remove('active')); tDots.forEach(d => d.classList.remove('active'));
+        tCards[i].classList.add('active'); tDots[i].classList.add('active'); cur = i; }
+    tDots.forEach(d => d.addEventListener('click', () => showT(+d.dataset.i)));
+    setInterval(() => showT((cur + 1) % tCards.length), 5500);
+
+    // ── Mobile menu ──
+    const menuBtn = document.getElementById('menuToggle');
+    const mobMenu = document.getElementById('mobileMenu');
+    let menuOpen = false;
+    menuBtn.addEventListener('click', () => {
+        menuOpen = !menuOpen;
+        mobMenu.classList.toggle('open', menuOpen);
+        const spans = menuBtn.querySelectorAll('span');
+        if (menuOpen) { gsap.to(spans[0], { rotation: 45, y: 6.5, duration: 0.3 }); gsap.to(spans[1], { opacity: 0, duration: 0.2 }); gsap.to(spans[2], { rotation: -45, y: -6.5, duration: 0.3 }); }
+        else { gsap.to(spans, { rotation: 0, y: 0, opacity: 1, duration: 0.3 }); }
+    });
+    mobMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { menuOpen = false; mobMenu.classList.remove('open'); gsap.to(menuBtn.querySelectorAll('span'), { rotation: 0, y: 0, opacity: 1, duration: 0.3 }); }));
+
+    // ── Smooth anchor ──
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => { e.preventDefault(); const t = document.querySelector(a.getAttribute('href')); if (t) lenis.scrollTo(t, { offset: -80 }); });
+    });
+
+    // ── Stagger batches ──
+    ScrollTrigger.batch('.svc', { start: 'top 88%', once: true, onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, stagger: 0.1, duration: 0.8, ease: 'power3.out' }) });
+    ScrollTrigger.batch('.reel-wrap', { start: 'top 88%', once: true, onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, stagger: 0.15, duration: 0.9, ease: 'power3.out' }) });
+    ScrollTrigger.batch('.p-item', { start: 'top 88%', once: true, onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, stagger: 0.08, duration: 0.8, ease: 'power3.out' }) });
+
+    // ── Contact image parallax ──
+    gsap.to('.contact-img img', { yPercent: 10, ease: 'none', scrollTrigger: { trigger: '.contact', start: 'top bottom', end: 'bottom top', scrub: 1 } });
+    // ── Video Mute Toggle ──
+    document.querySelectorAll('.vid-wrap').forEach(wrap => {
+        const vid = wrap.querySelector('.reel-vid');
+        const btn = wrap.querySelector('.mute-toggle');
+        if(!vid || !btn) return;
+        
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            vid.muted = !vid.muted;
+            if(vid.muted) {
+                btn.querySelector('.vol-muted').style.display = 'block';
+                btn.querySelector('.vol-up').style.display = 'none';
+            } else {
+                btn.querySelector('.vol-muted').style.display = 'none';
+                btn.querySelector('.vol-up').style.display = 'block';
+            }
+        });
+    });
+    // ── WhatsApp Redirect ──
+    function submitToWhatsApp(e) {
+        e.preventDefault();
+        const name = document.getElementById('contactName').value;
+        const email = document.getElementById('contactEmail').value;
+        const date = document.getElementById('contactDate').value;
+        const loc = document.getElementById('contactLocation').value;
+        const msg = document.getElementById('contactMessage').value;
+
+        const text = `*New Wedding Inquiry* 💍\n\n*Name:* ${name}\n*Email:* ${email}\n*Date:* ${date || 'Not specified'}\n*Location:* ${loc || 'Not specified'}\n*Message:* ${msg || 'None'}`;
+        
+        const encodedText = encodeURIComponent(text);
+        const whatsappUrl = `https://wa.me/9847171417?text=${encodedText}`;
+        
+        window.open(whatsappUrl, '_blank');
+    }
+    </script>
+</body>
+</html>
