@@ -1346,15 +1346,28 @@
                                 div.className = 'reel-wrap r';
                                 div.style = `translate: none; rotate: none; scale: none; opacity: 1; transform: translate(0px, 0px);`;
                                 
+                                let videoSrc = item.url;
+                                let igLinkHtml = '';
+                                
+                                if (item.url.includes('#ig=')) {
+                                    const parts = item.url.split('#ig=');
+                                    videoSrc = parts[0];
+                                    const igUrl = decodeURIComponent(parts[1]);
+                                    igLinkHtml = `<a href="${igUrl}" target="_blank">View IG <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" stroke-width="2" fill="none"></path></svg></a>`;
+                                }
+
                                 div.innerHTML = `
                                     <div class="vid-wrap">
-                                        <video src="${item.url}" autoplay loop muted playsinline class="reel-vid"></video>
+                                        <video src="${videoSrc}" autoplay loop muted playsinline class="reel-vid"></video>
                                         <button class="mute-toggle" aria-label="Toggle Sound">
                                             <svg class="vol-up" viewBox="0 0 24 24" style="display:none;"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
                                             <svg class="vol-muted" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6"></path></svg>
                                         </button>
                                     </div>
-                                    <div class="reel-footer"><h4>Cinematic Story</h4></div>
+                                    <div class="reel-footer">
+                                        <h4>Cinematic Story</h4>
+                                        ${igLinkHtml}
+                                    </div>
                                 `;
                                 rGrid.appendChild(div);
                             });

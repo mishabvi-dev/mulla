@@ -49,13 +49,19 @@
             
             <div class="field">
                 <label style="display:block; margin-bottom:5px; color:#ddd; font-size:14px;">Destination Section:</label>
-                <select id="uploadSection" style="background:#000; color:#fff; padding:12px; width:100%; border:1px solid #555; border-radius:4px; margin-bottom:20px; font-size:16px;">
+                <select id="uploadSection" style="background:#000; color:#fff; padding:12px; width:100%; border:1px solid #555; border-radius:4px; font-size:16px;">
                     <option value="portfolio">Portfolio Grid (Images & Videos)</option>
                     <option value="reels">Reels Section (Videos Only)</option>
                 </select>
             </div>
 
-            <div class="field">
+            <!-- IG LINK (Hidden by default) -->
+            <div class="field" id="igLinkContainer" style="display:none; margin-top: 15px;">
+                <label style="display:block; margin-bottom:5px; color:#ddd; font-size:14px;">Instagram Link (Optional):</label>
+                <input type="url" id="igLinkInput" placeholder="https://www.instagram.com/reel/..." style="margin-bottom:0;">
+            </div>
+
+            <div class="field" style="margin-top: 20px;">
                 <input type="file" id="mediaInput" accept="image/*,video/*">
             </div>
             <button id="uploadBtn" style="width:auto;">Upload to Website</button>
@@ -81,10 +87,21 @@
     const loginStatus = document.getElementById('loginStatus');
 
     const uploadSectionDropdown = document.getElementById('uploadSection');
+    const igLinkContainer = document.getElementById('igLinkContainer');
+    const igLinkInput = document.getElementById('igLinkInput');
     const uploadBtn = document.getElementById('uploadBtn');
     const mediaInput = document.getElementById('mediaInput');
     const statusEl = document.getElementById('status');
     const galleryEl = document.getElementById('gallery');
+
+    // Toggle IG link input visibility
+    uploadSectionDropdown.addEventListener('change', () => {
+        if (uploadSectionDropdown.value === 'reels') {
+            igLinkContainer.style.display = 'block';
+        } else {
+            igLinkContainer.style.display = 'none';
+        }
+    });
 
     // ── AUTHENTICATION ──
     async function checkUser() {
@@ -155,17 +172,20 @@
             if (section === 'reels') typeStr = 'reels_video';
             else if (isVideo) typeStr = 'portfolio_video';
 
-            // Handle legacy items in DB just in case
-            if (section === 'portfolio' && !isVideo) typeStr = 'image';
-            if (section === 'portfolio' && isVideo) typeStr = 'video';
-            if (section === 'reels') typeStr = 'reels_video';
+            // Append IG Link to the URL hash if provided (No database schema change needed!)
+            let finalUrl = data.publicUrl;
+            const igLink = igLinkInput.value.trim();
+            if (section === 'reels' && igLink) {
+                finalUrl = `${data.publicUrl}#ig=${encodeURIComponent(igLink)}`;
+            }
 
-            const { error: dbError } = await supabase.from('portfolio').insert([{ type: typeStr, url: data.publicUrl }]);
+            const { error: dbError } = await supabase.from('portfolio').insert([{ type: typeStr, url: finalUrl }]);
             if (dbError) throw dbError;
 
             statusEl.innerText = "Successfully uploaded to " + section + "!";
             statusEl.style.color = "#4CAF50";
             mediaInput.value = ''; 
+            igLinkInput.value = '';
             loadGallery();
         } catch (error) {
             statusEl.innerText = `Error: ${error.message}`;
@@ -186,7 +206,10 @@
             div.className = 'media-item';
             
             const isVideo = item.type.includes('video') || item.type === 'reels_video';
-            div.innerHTML = isVideo ? `<video src="${item.url}" autoplay loop muted></video>` : `<img src="${item.url}">`;
+            // Strip the IG link hash for the actual src preview
+            const cleanUrl = item.url.split('#ig=')[0];
+
+            div.innerHTML = isVideo ? `<video src="${cleanUrl}" autoplay loop muted></video>` : `<img src="${cleanUrl}">`;
             
             // Add a badge indicating where it is displayed
             const badge = document.createElement('div');
@@ -196,7 +219,7 @@
             const delBtn = document.createElement('button');
             delBtn.className = 'delete-btn';
             delBtn.innerText = 'Delete';
-            delBtn.onclick = () => deleteMedia(item.id, item.url);
+            delBtn.onclick = () => deleteMedia(item.id, cleanUrl);
             
             div.appendChild(badge);
             div.appendChild(delBtn);
