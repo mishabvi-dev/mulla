@@ -1293,7 +1293,7 @@
     }
     </script>
     
-    <!-- ── Supabase Dynamic Portfolio ── -->
+    <!-- ── Supabase Dynamic Media ── -->
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
         
@@ -1301,48 +1301,91 @@
         const supabaseKey = 'sb_publishable_g1jR6_Js9DjMsfiJmO7L8Q_kx_cFGfR';
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        async function loadDynamicPortfolio() {
+        async function loadDynamicMedia() {
             try {
                 const { data, error } = await supabase.from('portfolio').select('*').order('created_at', { ascending: false });
                 
                 if (error) throw error;
                 
-                // If there are uploaded items, overwrite the hardcoded ones
                 if (data && data.length > 0) {
-                    const grid = document.querySelector('.portfolio-mosaic');
-                    if (grid) {
-                        grid.innerHTML = ''; // clear out hardcoded items
-                        
-                        data.forEach((item, index) => {
-                            const div = document.createElement('div');
-                            div.className = 'p-item r';
-                            div.style = `translate: none; rotate: none; scale: none; opacity: 1; transform: translate(0px, 0px);`; 
-                            
-                            let mediaHtml = '';
-                            if (item.type === 'video') {
-                                mediaHtml = `<video src="${item.url}" autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>`;
-                            } else {
-                                mediaHtml = `<img src="${item.url}" alt="Portfolio Item">`;
-                            }
-                            
-                            // Keep the sleek hover overlay but just use generic text since admin only uploads media
-                            div.innerHTML = `
-                                ${mediaHtml}
-                                <div class="p-item-info"><h3>Wedding Story ${index + 1}</h3><span>Captured</span></div>
-                            `;
-                            grid.appendChild(div);
-                        });
-                        
-                        // Let ScrollReveal re-trigger if needed, though they start opaque above
+                    // Separate by section
+                    const portfolioItems = data.filter(item => item.type !== 'reels_video');
+                    const reelsItems = data.filter(item => item.type === 'reels_video');
+                    
+                    // 1. Update Portfolio Grid
+                    if (portfolioItems.length > 0) {
+                        const pGrid = document.querySelector('.portfolio-mosaic');
+                        if (pGrid) {
+                            pGrid.innerHTML = ''; 
+                            portfolioItems.forEach((item, index) => {
+                                const div = document.createElement('div');
+                                div.className = 'p-item r';
+                                div.style = `translate: none; rotate: none; scale: none; opacity: 1; transform: translate(0px, 0px);`; 
+                                
+                                const isVideo = item.type.includes('video');
+                                const mediaHtml = isVideo ? 
+                                    `<video src="${item.url}" autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>` : 
+                                    `<img src="${item.url}" alt="Portfolio Item">`;
+                                
+                                div.innerHTML = `
+                                    ${mediaHtml}
+                                    <div class="p-item-info"><h3>Wedding Story ${index + 1}</h3><span>Captured</span></div>
+                                `;
+                                pGrid.appendChild(div);
+                            });
+                        }
+                    }
+
+                    // 2. Update Reels Section
+                    if (reelsItems.length > 0) {
+                        const rGrid = document.querySelector('.reels-row');
+                        if (rGrid) {
+                            rGrid.innerHTML = '';
+                            reelsItems.forEach(item => {
+                                const div = document.createElement('div');
+                                div.className = 'reel-wrap r';
+                                div.style = `translate: none; rotate: none; scale: none; opacity: 1; transform: translate(0px, 0px);`;
+                                
+                                div.innerHTML = `
+                                    <div class="vid-wrap">
+                                        <video src="${item.url}" autoplay loop muted playsinline class="reel-vid"></video>
+                                        <button class="mute-toggle" aria-label="Toggle Sound">
+                                            <svg class="vol-up" viewBox="0 0 24 24" style="display:none;"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                                            <svg class="vol-muted" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6"></path></svg>
+                                        </button>
+                                    </div>
+                                    <div class="reel-footer"><h4>Cinematic Story</h4></div>
+                                `;
+                                rGrid.appendChild(div);
+                            });
+
+                            // Re-bind mute toggles for the newly injected videos
+                            document.querySelectorAll('.reels-row .vid-wrap').forEach(wrap => {
+                                const vid = wrap.querySelector('.reel-vid');
+                                const btn = wrap.querySelector('.mute-toggle');
+                                if(!vid || !btn) return;
+                                
+                                btn.addEventListener('click', (e) => {
+                                    e.preventDefault();
+                                    vid.muted = !vid.muted;
+                                    if(vid.muted) {
+                                        btn.querySelector('.vol-muted').style.display = 'block';
+                                        btn.querySelector('.vol-up').style.display = 'none';
+                                    } else {
+                                        btn.querySelector('.vol-muted').style.display = 'none';
+                                        btn.querySelector('.vol-up').style.display = 'block';
+                                    }
+                                });
+                            });
+                        }
                     }
                 }
             } catch (err) {
                 console.error('Supabase load error:', err);
-                // Fail silently, leave hardcoded items intact
             }
         }
         
-        loadDynamicPortfolio();
+        loadDynamicMedia();
     </script>
 </body>
 </html>

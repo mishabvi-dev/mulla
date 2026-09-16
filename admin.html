@@ -45,7 +45,16 @@
 
         <div class="card">
             <h3>Upload New Media</h3>
-            <p style="color:#aaa; font-size:14px; margin-bottom: 20px;">Upload an image (.jpg, .png) or a video (.mp4). It will automatically appear in your portfolio.</p>
+            <p style="color:#aaa; font-size:14px; margin-bottom: 20px;">Upload an image or video, and choose where it should appear on the website.</p>
+            
+            <div class="field">
+                <label style="display:block; margin-bottom:5px; color:#ddd; font-size:14px;">Destination Section:</label>
+                <select id="uploadSection" style="background:#000; color:#fff; padding:12px; width:100%; border:1px solid #555; border-radius:4px; margin-bottom:20px; font-size:16px;">
+                    <option value="portfolio">Portfolio Grid (Images & Videos)</option>
+                    <option value="reels">Reels Section (Videos Only)</option>
+                </select>
+            </div>
+
             <div class="field">
                 <input type="file" id="mediaInput" accept="image/*,video/*">
             </div>
@@ -53,7 +62,7 @@
             <div id="status"></div>
         </div>
 
-        <h3>Current Portfolio Media</h3>
+        <h3>Current Website Media</h3>
         <div class="gallery" id="gallery"></div>
     </div>
 </div>
@@ -65,13 +74,13 @@
     const supabaseKey = 'sb_publishable_g1jR6_Js9DjMsfiJmO7L8Q_kx_cFGfR';
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Elements
     const loginSection = document.getElementById('loginSection');
     const dashboardSection = document.getElementById('dashboardSection');
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     const loginStatus = document.getElementById('loginStatus');
 
+    const uploadSectionDropdown = document.getElementById('uploadSection');
     const uploadBtn = document.getElementById('uploadBtn');
     const mediaInput = document.getElementById('mediaInput');
     const statusEl = document.getElementById('status');
@@ -94,16 +103,13 @@
     loginBtn.addEventListener('click', async () => {
         loginBtn.disabled = true;
         loginStatus.innerText = "Authenticating...";
-        loginStatus.style.color = "#aaa";
         
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
-        
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         
         if (error) {
             loginStatus.innerText = error.message;
-            loginStatus.style.color = "red";
             loginBtn.disabled = false;
         } else {
             loginStatus.innerText = "";
@@ -122,6 +128,15 @@
         const file = mediaInput.files[0];
         if (!file) { statusEl.innerText = "Please select a file first."; statusEl.style.color = "red"; return; }
 
+        const section = uploadSectionDropdown.value;
+        const isVideo = file.type.startsWith('video/');
+
+        if (section === 'reels' && !isVideo) {
+            statusEl.innerText = "Error: The Reels section only accepts video files!";
+            statusEl.style.color = "red";
+            return;
+        }
+
         uploadBtn.disabled = true;
         statusEl.innerText = "Uploading to Cloud Storage...";
         statusEl.style.color = "#aaa";
@@ -134,14 +149,21 @@
             if (uploadError) throw uploadError;
 
             const { data } = supabase.storage.from('media').getPublicUrl(fileName);
-            
             statusEl.innerText = "Saving to Database...";
-            const type = file.type.startsWith('video/') ? 'video' : 'image';
             
-            const { error: dbError } = await supabase.from('portfolio').insert([{ type, url: data.publicUrl }]);
+            let typeStr = 'portfolio_image';
+            if (section === 'reels') typeStr = 'reels_video';
+            else if (isVideo) typeStr = 'portfolio_video';
+
+            // Handle legacy items in DB just in case
+            if (section === 'portfolio' && !isVideo) typeStr = 'image';
+            if (section === 'portfolio' && isVideo) typeStr = 'video';
+            if (section === 'reels') typeStr = 'reels_video';
+
+            const { error: dbError } = await supabase.from('portfolio').insert([{ type: typeStr, url: data.publicUrl }]);
             if (dbError) throw dbError;
 
-            statusEl.innerText = "Successfully uploaded!";
+            statusEl.innerText = "Successfully uploaded to " + section + "!";
             statusEl.style.color = "#4CAF50";
             mediaInput.value = ''; 
             loadGallery();
@@ -162,13 +184,21 @@
         data.forEach(item => {
             const div = document.createElement('div');
             div.className = 'media-item';
-            div.innerHTML = item.type === 'video' ? `<video src="${item.url}" autoplay loop muted></video>` : `<img src="${item.url}">`;
+            
+            const isVideo = item.type.includes('video') || item.type === 'reels_video';
+            div.innerHTML = isVideo ? `<video src="${item.url}" autoplay loop muted></video>` : `<img src="${item.url}">`;
+            
+            // Add a badge indicating where it is displayed
+            const badge = document.createElement('div');
+            badge.style = "position:absolute; bottom:5px; left:5px; background:rgba(0,0,0,0.8); padding:3px 8px; font-size:11px; color:#fff; border-radius:3px; text-transform:uppercase;";
+            badge.innerText = item.type === 'reels_video' ? '🎬 Reels' : '📸 Portfolio';
             
             const delBtn = document.createElement('button');
             delBtn.className = 'delete-btn';
             delBtn.innerText = 'Delete';
             delBtn.onclick = () => deleteMedia(item.id, item.url);
             
+            div.appendChild(badge);
             div.appendChild(delBtn);
             galleryEl.appendChild(div);
         });
